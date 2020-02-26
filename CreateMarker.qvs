@@ -1,0 +1,199 @@
+Sub CreateMarker(A,B,C,D,E,F,G,H)
+
+    // this routine can be used to find a string of characters in a field ( e.g. hashtags in a description field
+    // and store those in an new table (e.g. a hashtag table) with a link to the record where the string was found
+    // It can also be used to find other character strings than hashtags, eg. CR-1234 or @P1234, see setting
+    // of parameters below. The resulting string of records needs to be comprised
+    // of ASCII characters (A-Z,a-z) and digits (0-9) only, with the exception of the hyphen which is also allowed
+    // (e.g. REC-1234)
+
+    // The routine works with the following parameters:
+    // CALL CreateMarker(SourceTable, SourceField,TargetTable, TargetColumn, KeyColumnName, StringIdentifier, MinLength, WordSeparator)
+    // where
+    // SourceTable      = the table which contains the field to be searched
+    // SourceField      = the field to be searched
+    // TargetTable      = the name of the new table which will contain the found strings (e.g. Hashtags)
+    // TargetColumn     = the field in the new table which will contain the found strings (e.g. Hashtags)
+    // KeyColumnName    = the field which links the SourceTable and TargetTable
+    // StringIdentifier = the string with which a substrings should start, e.g. # or @ etc. This can also
+    //					          be a longer string, e.g. CR- or #demo etc.
+    //					          If this parameter is not set it defaults to #
+    // MinLength        = the minimum length of the entire string to be found, defaults to 3
+    // WordSeparator    = the string of characters that separates words in the source field from each other.
+    //                    If not set it defaults to a blank ' '
+
+    // make sure you dont use brackets [] for table or columns, leaving them in '' is sufficient if a table or columns name shold be two words or more, e.g
+    // Call CreateMarker('Data Table','String Field','Hashtag Table','Hashtag Field','Key','#');
+
+
+
+    // Make sure all parameters are passed and/or set to a default value
+    IF isnull(A) OR isnull(B) OR isnull(C) OR isnull(D) OR isnull(E) THEN
+        TRACE =====================;
+        TRACE WARNING;
+        TRACE =====================;
+        TRACE This routine must be called at a minimum like this:;
+        TRACE ;
+        TRACE CALL CreateHashtag(SourceTable,SourceColumn,TargetTable,TargetColumn,KeyColumnName);
+        TRACE ;
+        TRACE Optionally you may pass as a 6th paramater the character which marks the ginning of a hashtag (Default is '#');
+        TRACE and a 7th parameter which marks how words are separated from each other(Default is ' ');
+        TRACE;
+        TRACE;
+    ELSE
+    	TRACE Running CreateMarker('$(A)','$(B)','$(C)','$(D)','$(E)','$(F)','$(G)','$(H)');
+
+        LET vSourceTableName=A;
+        LET vSourceColumnName=B;
+        LET vTargetTableName=C;
+        LET vTargetColumnName=D;
+        Let vTargetKeyName=E;
+        IF isnull(F) THEN
+            LET vStartChar='#';
+        ELSE
+            LET vStartChar=F;
+        END IF;
+        IF isnull(G) THEN
+            LET vMinLength='3';
+        ELSE
+            LET vMinLength=G;
+        END IF;
+        IF isnull(H) THEN
+            LET vWordSeparator=' ';
+        ELSE
+            LET vWordSeparator=H;
+        END IF;
+
+        // create a table stub
+
+        LET vCheckTableExistance = NoOfRows('$(vTargetTableName)');
+
+        IF isnull(vCheckTableExistance) THEN
+
+            HashtagStub:
+            LOAD
+               'DeleteMeLater' 	as A,
+               null() 			as B
+            autogenerate 1;
+
+        END IF;
+
+
+        // read the source field and break it down into singular words using subfield() and the word
+        // separator parameter, then filter out 95% which are not a hashtag (=don't' start with
+        // the word separator parameter)
+
+        HashtagCandidates:
+        NoConcatenate
+        Load
+        	*
+        where
+        	upper(mid(CandidateWord,1,len('$(vStartChar)')))=upper('$(vStartChar)')
+          and len(CandidateWord)>='$(vMinLength)'
+          and substringcount(CandidateWord,'$(vWordSeparator)') = 0
+        ;
+        LOAD
+        	DISTINCT
+            subfield("$(vSourceColumnName)",'$(vWordSeparator)') as CandidateWord,
+            "$(vTargetKeyName)" as CandidateKey
+        Resident
+            "$(vSourceTableName)"
+        ;
+
+        // create a table that breaks down each word into singular characters
+        HashtagLetters:
+        NoConcatenate
+        Load
+        	  *,
+            mid(CandidateWord,IterNo(),1) as CandidateWordLetter,
+            iterno() as CandidateWordLetterNo
+        Resident
+        	HashtagCandidates
+        while
+        	IterNo()< len(CandidateWord)+1
+        ;
+
+        // find words that contain at least one of the excluded characters which could
+        // occur somewhere in the middle of the found word
+        ExcludedHashtags:
+        NoConcatenate
+        LOAD DISTINCT
+          CandidateWord as ExcludedHashtag
+        Resident
+          HashtagLetters
+        Where
+          ord(CandidateWordLetter)<>ord('$(vStartChar)')
+        and
+        	ord(CandidateWordLetter)<>45 // allow dash, e.g. CR-324
+        AND (
+          	(ord(CandidateWordLetter)<=47)
+        		OR
+          	(ord(CandidateWordLetter)>=58 and ord(CandidateWordLetter)<=64)
+        		OR
+          	(ord(CandidateWordLetter)>=91 and ord(CandidateWordLetter)<=96)
+        		OR
+          	(ord(CandidateWordLetter)>=123)
+        )
+        ;
+
+        // load only all words which do not contain those excluded characters into the new table and add
+        // the link to the source table
+
+        IF isnull(vCheckTableExistance) THEN
+
+            CONCATENATE (HashtagStub)
+            LOAD
+              DISTINCT
+                CandidateWord as A,
+              CandidateKey  as B
+            Resident
+                HashtagCandidates
+            where
+                NOT exists(ExcludedHashtag, CandidateWord)
+            ;
+
+
+            "$(vTargetTableName)":
+            NoConcatenate
+            Load
+            A as "$(vTargetColumnName)",
+            B  as "$(vTargetKeyName)",
+            1 as "$(vTargetColumnName) Count"
+            Resident
+            HashtagStub
+            where A <> 'DeleteMeLater'
+            ;
+
+    		    DROP TABLE HashtagStub;
+
+        ELSE
+
+            CONCATENATE ("$(vTargetTableName)")
+            LOAD
+              DISTINCT
+            	CandidateWord as "$(vTargetColumnName)",
+              CandidateKey  as "$(vTargetKeyName)",
+              1 as "$(vTargetColumnName) Count"
+            Resident
+            	HashtagCandidates
+            where
+            	NOT exists(ExcludedHashtag, CandidateWord)
+          ;
+
+        END IF;
+
+        // clean up
+        DROP TABLE ExcludedHashtags, HashtagLetters, HashtagCandidates;
+
+        LET vStartChar=null();
+        LET vWordSeparator=null();
+        LET vSourceTableName=null();
+        LET vSourceColumnName=null();
+        LET vTargetTableName=null();
+        LET vTargetColumnName=null();
+        LET vTargetKeyName=null();
+        LET vMinLength=null();
+
+    END IF;
+
+End Sub
