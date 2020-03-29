@@ -1,0 +1,57 @@
+//INLINE Table LOAD 
+//  Good for create a temporary or hard coded table when needed.
+//  Also a good option for creating a default sorted list and removing
+//    the temporary table so that the field is sorted by default (see
+//    second example below.
+//
+//  Text does not need to be quoted
+
+[Table Name]:
+LOAD * INLINE [
+  field1, field2, field3
+  r1val1, r1val2, r1val3
+  r2val1, r2val2, r2val3
+];
+
+
+// Sorted example #1 Simple table
+//   Notice that you can have multiple fields (unrelated) in the single table
+//   Once loaded, you can drop the table as it is no longer needed.
+//   NOTE: This should be near the top of the load script in order to ensure
+//         that this order is used and not another one.
+
+//[TEMPSortedLists]:
+//LOAD * INLINE [
+//  OrderStatus,  OpportunityStatus
+//  New,          Lead
+//  Open,         Goal Identified
+//  Processing,   Goal Confirmed
+//  Closed,       Discovery
+//  Rejected,     Proof
+//  ,             Contracting
+//  ,             Closed Won
+//  ,             Closed Lost
+//  ,             Rejected
+//];
+
+//DROP TABLE TEMPSortedLists;
+
+
+
+// Sorted example #2 Apply Maps
+//   Use applymaps to provide a more useful sorting...
+
+//[MapOrderStatus]:
+//LOAD
+// OrderStatus, dual(OrderStatus,OrderNumber);
+//LOAD * INLINE [
+//  OrderStatus,  OrderNumber
+//  New,          1
+//  Open,         10
+//  Processing,   20
+//  Closed,       90
+//  Rejected,     99
+//];
+
+//Then use the ApplyMap later as:
+//  ApplyMap('MapOrderStatus',OrderStatus) as [Order Status],
