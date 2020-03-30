@@ -17,18 +17,17 @@ SET ErrorMode=0;
 	TRACE Calling with one text argument...;
 	Call RemoveHTMLTags('$(vHTMLData)');
 
+	TRACE Calling with one numeric argument...;
+	Call RemoveHTMLTags(5);
+
 	TRACE Calling with one text and one numeric value for UpdateVariable;
 	Call RemoveHTMLTags('$(vHTMLData)',5);
-   TRACE Result: 5 = '$(5)';
+    TRACE Result: 5 = '$(5)';
 
 	TRACE Calling with one numeric for InputText and one text value;
 	Call RemoveHTMLTags(5,'vCleanedHTML');
-   TRACE Result: vCleanedHTML = '$(vCleanedHTML)';
+    TRACE Result: vCleanedHTML = '$(vCleanedHTML)';
     
-   TRACE Calling with InputText value without quotes;
-	Call RemoveHTMLTags($(vHTMLData),'vCleanedHTML');
-   TRACE Result: vCleanedHTML = '$(vCleanedHTML)';
-
 SET ErrorMode=1;
 
 TRACE Finished testing Sub RemoveHTMLTags;

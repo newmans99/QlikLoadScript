@@ -23,35 +23,37 @@ Sub RemoveHTMLTags(A,B)
         TRACE ==========================================;
         TRACE WARNING: First arg missing or not text;
         TRACE ==========================================;
-        TRACE This routine must be called at a minimum like this:;
-        TRACE ;
-        TRACE CALL RemoveHTMLTags(InputText,VariableToBeUpdated);
-        TRACE ;
-        TRACE Where the first required argument, InputText is a text value;
         
         IF isnull(B) OR NOT istext(B) THEN
-        		TRACE ==========================================;
-        		TRACE WARNING: Second arg missing or not text;
-        		TRACE ==========================================;
-        		TRACE ;
-        		TRACE Where the second required argument, VariableToBeUpdated is a text value;
-        		TRACE ;
+        	TRACE ==========================================;
+        	TRACE WARNING: Second arg missing or not text;
+        	TRACE ==========================================;
 		END IF;
 
+        TRACE ;
+        TRACE This routine must be called at a minimum like this:;
+        TRACE ;
+        TRACE     CALL RemoveHTMLTags(InputText,VariableToBeUpdated);
+        TRACE ;
+        TRACE     Where the first required argument, InputText is a text value;
+        TRACE     Where the second required argument, VariableToBeUpdated is a text value;
+        
 	ELSE
         IF isnull(B) OR NOT istext(B) THEN
-        		TRACE ==========================================;
-        		TRACE WARNING: Second arg missing or not text;
-        		TRACE ==========================================;
-        		TRACE This routine must be called at a minimum like this:;
-        		TRACE ;
-        		TRACE CALL RemoveHTMLTags(InputText,VariableToBeUpdated);
-        		TRACE ;
-        		TRACE Where the second required argument, VariableToBeUpdated is a text value;
-        		TRACE ;
+        	TRACE ==========================================;
+        	TRACE WARNING: Second arg missing or not text;
+        	TRACE ==========================================;
+        	TRACE ;
+        	TRACE This routine must be called at a minimum like this:;
+        	TRACE ;
+        	TRACE     CALL RemoveHTMLTags(InputText,VariableToBeUpdated);
+        	TRACE ;
+        	TRACE     Where the first required argument, InputText is a text value;
+        	TRACE     Where the second required argument, VariableToBeUpdated is a text value;
+
 		ELSE
         
-	    		TRACE Running RemoveHTMLTags('$(A)','$(B)');
+	    	TRACE Running RemoveHTMLTags('$(A)','$(B)');
         
 	        LET vOutputText=A;
 	        LET vTargetVariable=B;
@@ -60,7 +62,7 @@ Sub RemoveHTMLTags(A,B)
 	        LET vOutputText=Replace(Replace(Replace('$(vOutputText)','<br>',chr(10)),'<br/>',chr(10)),'<br />',chr(10));
 
 			//loop through input text while there are tags
-	        //  NOTE: Must used unqualifed variable in order for WHILE condition to be re-evaluated on each pass
+	        // NOTE: Must used unqualifed variable in order for WHILE condition to be re-evaluated on each pass
 	        DO WHILE len(TextBetween(vOutputText, '<', '>'))>0
 	          //find tags in string with <*AnyText*> pattern and replace with ''
 	          LET vOutputText=Replace('$(vOutputText)', '<'&TextBetween('$(vOutputText)', '<', '>')&'>', '');
