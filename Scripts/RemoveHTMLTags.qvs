@@ -19,37 +19,59 @@ Sub RemoveHTMLTags(A,B)
     //   https://community.qlik.com/t5/Qlik-Sense-Documents-Videos/How-to-Efficiently-Clean-HTML-Tags-from-Your-Data-Source/ta-p/1688670  
     
     // Make sure all parameters are passed and/or set to a default value
-    IF isnull(A) OR isnull(B) THEN
-        TRACE =====================;
-        TRACE WARNING;
-        TRACE =====================;
+    IF isnull(A) OR NOT istext(A) THEN
+        TRACE ==========================================;
+        TRACE WARNING: First arg missing or not text;
+        TRACE ==========================================;
         TRACE This routine must be called at a minimum like this:;
         TRACE ;
         TRACE CALL RemoveHTMLTags(InputText,VariableToBeUpdated);
-        TRACE;
-        TRACE;
-    ELSE
-    	TRACE Running RemoveHTMLTags('$(A)','$(B)');
+        TRACE ;
+        TRACE Where the first required argument, InputText is a text value;
         
-        LET vOutputText=A;
-        LET vTargetVariable=B;
-        
-        //replace line breaks with carriage returns - improves legibility
-        LET vOutputText=Replace(Replace('$(vOutputText)','<br>',chr(10)),'<br/>',chr(10));
+        IF isnull(B) OR NOT istext(B) THEN
+        		TRACE ==========================================;
+        		TRACE WARNING: Second arg missing or not text;
+        		TRACE ==========================================;
+        		TRACE ;
+        		TRACE Where the second required argument, VariableToBeUpdated is a text value;
+        		TRACE ;
+		END IF;
 
-		//loop through input text while there are tags
-        // NOTE: Must used unqualifed variable in order for WHILE condition to be re-evaluated on each pass
-        DO WHILE len(TextBetween(vOutputText, '<', '>'))>0
-          //find tags in string with <*AnyText*> pattern and replace with ''
-          LET vOutputText=Replace('$(vOutputText)', '<'&TextBetween('$(vOutputText)', '<', '>')&'>', '');
-        LOOP;
+	ELSE
+        IF isnull(B) OR NOT istext(B) THEN
+        		TRACE ==========================================;
+        		TRACE WARNING: Second arg missing or not text;
+        		TRACE ==========================================;
+        		TRACE This routine must be called at a minimum like this:;
+        		TRACE ;
+        		TRACE CALL RemoveHTMLTags(InputText,VariableToBeUpdated);
+        		TRACE ;
+        		TRACE Where the second required argument, VariableToBeUpdated is a text value;
+        		TRACE ;
+		ELSE
+        
+	    		TRACE Running RemoveHTMLTags('$(A)','$(B)');
+        
+	        LET vOutputText=A;
+	        LET vTargetVariable=B;
+        
+	        //replace line breaks with carriage returns - improves legibility
+	        LET vOutputText=Replace(Replace(Replace('$(vOutputText)','<br>',chr(10)),'<br/>',chr(10)),'<br />',chr(10));
+
+			//loop through input text while there are tags
+	        //  NOTE: Must used unqualifed variable in order for WHILE condition to be re-evaluated on each pass
+	        DO WHILE len(TextBetween(vOutputText, '<', '>'))>0
+	          //find tags in string with <*AnyText*> pattern and replace with ''
+	          LET vOutputText=Replace('$(vOutputText)', '<'&TextBetween('$(vOutputText)', '<', '>')&'>', '');
+	        LOOP;
   
-        LET $(vTargetVariable) = trim('$(vOutputText)');
+	        LET $(vTargetVariable) = trim('$(vOutputText)');
         
-        // clean up
-        LET vOutputText=null();
-        LET vTargetVariable=null();
+	        // clean up
+	        LET vOutputText=null();
+	        LET vTargetVariable=null();
 
-    END IF;
-
+	    END IF;
+	END IF;
 END SUB;
