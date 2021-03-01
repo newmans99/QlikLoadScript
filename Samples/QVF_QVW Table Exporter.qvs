@@ -13,12 +13,13 @@ Binary 'lib://Demo_Data_Shared/SampleApps\Patient Costing\Patient Costing.qvf';
 SET vQVDLocation = 'lib://Demo_Data_Shared/SampleApps\Patient Costing\QVDs';
 
 FOR vCount = 0 to NoOfTables()-1
+FOR vCount = 0 to NoOfTables()-1
+	LET vTableName = TableName($(vCount));
   IF len(trim('$(vTableName)'))>0 THEN 
-     LET vTableName = TableName($(vCount));
-     STORE [$(vTableName)] INTO '$(vQVDLocation)/$(vTableName).qvd' (qvd);
+    STORE [$(vTableName)] INTO '$(vQVDLocation)/$(vTableName).qvd' (qvd);
 
-     //Drop the tables so that you don't end up wasting time creating indicies or synthetic keys.
-     DROP TABLE [$(vTableName)];
+    //Drop the tables so that you don't end up wasting time creating indicies or synthetic keys.
+    DROP TABLE [$(vTableName)];
    END IF;
 NEXT vCount
 
